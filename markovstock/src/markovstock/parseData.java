@@ -1,5 +1,6 @@
 package markovstock;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 
 public class parseData {
 	
@@ -23,7 +25,7 @@ public class parseData {
 		return new ArrayList<String[]>(records.subList(1, records.size()));
 	}
 	
-	public static MarkovChain createParameters(String sym, ArrayList<String[]> records){
+	public static MarkovChain createParameters(String sym, ArrayList<String[]> records) throws IOException{
 		ArrayList<Double> closingPrices = new ArrayList<Double>();
 		for (String[] day: records){
 			closingPrices.add(Double.valueOf(day[4]));
@@ -57,6 +59,17 @@ public class parseData {
 				transitionMatrix[i][k] = (double)(transitionCounts[i][k]) / sum;
 			}
 		}
+		CSVWriter writer = new CSVWriter(new FileWriter("matrices.csv"), '\t');
+		String[] concatTrans = new String[transitionMatrix.length*transitionMatrix.length + 2];
+		concatTrans[0] = sym;
+		concatTrans[1] = Double.toString(averageChange);
+		for (int i = 0; i < transitionMatrix.length; i++){
+			for (int j = 0; j < transitionMatrix.length; i++){
+				concatTrans[transitionMatrix.length*i + j + 2] = Double.toString(transitionMatrix[i][j]);
+			}
+		}
+		writer.writeNext(concatTrans);
+		writer.close();
 		return new MarkovChain(sym, averageChange, transitionMatrix);
 	}
 	

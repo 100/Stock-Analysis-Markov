@@ -1,5 +1,7 @@
 package markovstock;
 
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.*;
 
@@ -9,6 +11,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+
 
 public class MarkovChain {
 	private double[][] transitions;
@@ -16,9 +21,26 @@ public class MarkovChain {
 	private String symbol;
 	
 	public MarkovChain(String sym, double averageStockChange, double[][] transitionMatrix){
-		transitions = transitionMatrix;
-		averageChange = averageStockChange;
-		symbol = sym.toUpperCase();
+		this.transitions = transitionMatrix;
+		this.averageChange = averageStockChange;
+		this.symbol = sym.toUpperCase();
+	}
+	
+	public MarkovChain(String sym, String filePath) throws IOException{
+		CSVReader reader = new CSVReader(new FileReader("matrices.csv"), '\t');
+		String[] line;
+		while ((line = reader.readNext()) != null){
+			if (line[0].equals(sym)){
+				break;
+			}
+		}
+		this.symbol = sym;
+		this.averageChange = Double.valueOf(line[1]);
+		this.transitions = new double[5][5];
+		for (int i = 2; i < line.length; i++){
+			this.transitions[(i-2)/5][(i-2)%5] = Double.valueOf(line[i]);
+		}
+		reader.close();
 	}
 	
 	public double getCurentPrice() throws IOException{
@@ -30,7 +52,7 @@ public class MarkovChain {
 	
 	public void doSimulations(int numSims, int numDays, double startingPrice) throws ClassNotFoundException, SQLException{
 		 Class.forName("org.sqlite.JDBC");
-		 Connection con = DriverManager.getConnection("jdbc:sqlite:test.db");
+		 Connection con = DriverManager.getConnection("jdbc:sqlite:sims.db");
 		 con.setAutoCommit(true);
 		 Statement statement = con.createStatement();
 		 String query = "CREATE TABLE IF NOT EXISTS SIMULATION" + symbol + " (" +
@@ -60,12 +82,23 @@ public class MarkovChain {
 	
 	public void eraseSimulations() throws ClassNotFoundException, SQLException{
 		Class.forName("org.sqlite.JDBC");
-		Connection con = DriverManager.getConnection("jdbc:sqlite:test.db");
+		Connection con = DriverManager.getConnection("jdbc:sqlite:sims.db");
 		Statement statement = con.createStatement();
 		String query = "DROP TABLE IF EXISTS SIMULATION" + symbol + ";";
 		statement.executeUpdate(query);
 		con.commit();
 		con.close();
+	}
+	
+	public void exportSimulations() throws IOException, ClassNotFoundException, SQLException{
+		 CSVWriter writer = new CSVWriter(new FileWriter("./results/table" + symbol + ".csv"), '\t');
+		 Class.forName("org.sqlite.JDBC");
+	     Connection con = DriverManager.getConnection("jdbc:sqlite:sims.db");
+	     Statement stmt = con.createStatement();
+	     ResultSet results = stmt.executeQuery("SELECT * FROM SIMULATION" + symbol + ";");
+		 writer.writeAll(results, true);
+		 writer.close();
+		 con.close();
 	}
 	
 	public double predictXDays(int initialState, int finalState, int daysLater){
