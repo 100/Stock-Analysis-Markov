@@ -1,5 +1,6 @@
 *.pydevproject
 .metadata
+.recommenders
 bin/
 tmp/
 *.tmp
