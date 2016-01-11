@@ -3,6 +3,8 @@ package markovstock;
 import java.io.IOException;
 import java.sql.*;
 
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -52,6 +54,28 @@ public class MarkovChain {
 			 }
 			 insertion.executeUpdate();
 		 }
+		 con.commit();
+		 con.close();
+	}
+	
+	public void eraseSimulations() throws ClassNotFoundException, SQLException{
+		Class.forName("org.sqlite.JDBC");
+		Connection con = DriverManager.getConnection("jdbc:sqlite:test.db");
+		Statement statement = con.createStatement();
+		String query = "DROP TABLE IF EXISTS SIMULATION" + symbol + ";";
+		statement.executeUpdate(query);
+		con.commit();
+		con.close();
+	}
+	
+	public double predictXDays(int initialState, int finalState, int daysLater){
+		RealMatrix transitionMatrix = MatrixUtils.createRealMatrix(transitions);
+		RealMatrix result = MatrixUtils.createRealMatrix(transitions);
+		for (int i = 0; i < daysLater - 1; i++){
+			result = transitionMatrix.multiply(result);
+		}
+		double chance = result.getEntry(initialState, finalState);
+		return chance;
 	}
 	
 	public double[] predict(int days, double startingPrice){
