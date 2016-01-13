@@ -1,5 +1,6 @@
 package markovstock;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -84,21 +85,24 @@ public class MarkovChain {
 		 con.close();
 	}
 	
-	public void extractSimulations(TimeSeriesCollection collection) throws ClassNotFoundException, SQLException{
+	public void extractSimulations(double currentPrice, TimeSeriesCollection collection) throws ClassNotFoundException, SQLException{
 		Class.forName("org.sqlite.JDBC");
 		Connection con = DriverManager.getConnection("jdbc:sqlite:sims.db");
 		Statement stmt = con.createStatement();
 		ResultSet results = stmt.executeQuery("SELECT * FROM SIMULATION" + symbol + ";");
-		addSimulationsToSeries(results, collection);
+		collection.removeAllSeries();
+		addSimulationsToSeries(currentPrice, results, collection);
 		con.close();
 	}
 	
-	public void addSimulationsToSeries(ResultSet sims, TimeSeriesCollection collection) throws SQLException{
+	public void addSimulationsToSeries(double currentPrice, ResultSet sims, TimeSeriesCollection collection) throws SQLException{
 		int columns = sims.getMetaData().getColumnCount();
 		while (sims.next()){
 			String simName = Integer.toString(sims.getInt(1));
 			TimeSeries series = new TimeSeries("Sim" + simName);
 			RegularTimePeriod day = new Day();
+			series.add(day, currentPrice);
+			day = day.next();
 			for (int i = 2; i < columns+1; i++){
 				double price = sims.getDouble(i);
 				series.add(day, price);
@@ -121,14 +125,29 @@ public class MarkovChain {
 	}
 	
 	public void exportSimulations() throws IOException, ClassNotFoundException, SQLException{
-		 CSVWriter writer = new CSVWriter(new FileWriter("./results/table" + symbol + ".csv"), '\t');
-		 Class.forName("org.sqlite.JDBC");
-	     Connection con = DriverManager.getConnection("jdbc:sqlite:sims.db");
-	     Statement stmt = con.createStatement();
-	     ResultSet results = stmt.executeQuery("SELECT * FROM SIMULATION" + symbol + ";");
-		 writer.writeAll(results, true);
-		 writer.close();
-		 con.close();
+		String filePath;
+		if (new File("./results/table" + symbol + ".csv").exists()){
+			File directory = new File("./results/");
+			String[] filesInDir = directory.list();
+			int currNumbering = 0;
+			for (int i = 0; i < filesInDir.length; i++){
+				if (filesInDir[i].startsWith("table" + symbol)){
+					currNumbering++;
+				}
+			}
+			filePath = "./results/table" + symbol + String.valueOf(currNumbering);
+		}
+		else{
+			filePath = "./results/table" + symbol;
+		}
+		CSVWriter writer = new CSVWriter(new FileWriter(filePath + ".csv"), '\t', CSVWriter.NO_QUOTE_CHARACTER);
+		Class.forName("org.sqlite.JDBC");
+	    Connection con = DriverManager.getConnection("jdbc:sqlite:sims.db");
+	    Statement stmt = con.createStatement();
+	    ResultSet results = stmt.executeQuery("SELECT * FROM SIMULATION" + symbol + ";");
+		writer.writeAll(results, true, true);
+		writer.close();
+		con.close();
 	}
 	
 	public double predictXDays(int initialState, int finalState, int daysLater){
@@ -169,7 +188,7 @@ public class MarkovChain {
 		else if (transition == 3){
 			multiplier = -(averageChange + (Math.random() * averageChange));
 		}
-		return currPrice * (1 + multiplier);
+		return currPrice * (1 + multiplier/100);
 	}
 	
 	public int makeSelection(int currState){

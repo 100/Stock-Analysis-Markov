@@ -4,8 +4,12 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -17,6 +21,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -38,7 +43,7 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
 
-public class GUI extends ApplicationFrame implements ActionListener {
+public class GUI extends JFrame implements ActionListener {
 	private JTextField company = new JTextField(10);
 	private JTextField numSims = new JTextField(10);
 	private JTextField numDays = new JTextField(10);
@@ -48,6 +53,7 @@ public class GUI extends ApplicationFrame implements ActionListener {
 	private JLabel companyLabel = new JLabel("Ticker Symbol:");
 	private JLabel numSimsLabel = new JLabel("Number of simulations:");
 	private JLabel numDaysLabel = new JLabel("Number of days to simulate:");
+	private JLabel status = new JLabel("Status: None");
 	
 	private String[] stateChoices = {"Small increase", "Large increasse", "Small decrease", "Large decrease", "No change"};
 	private JComboBox startList = new JComboBox(stateChoices);
@@ -64,7 +70,7 @@ public class GUI extends ApplicationFrame implements ActionListener {
 	
 	public GUI(String title){
 		super(title);
-		this.setContentPane(tabbedContent);
+		setContentPane(tabbedContent);
 		
 		JPanel[] buttons = initializeButtons();
 		JPanel[] forms = initializeForms();
@@ -73,8 +79,10 @@ public class GUI extends ApplicationFrame implements ActionListener {
 		tab1.add(labels[0], BorderLayout.LINE_START);
 		tab1.add(forms[0], BorderLayout.CENTER);
 		tab1.add(buttons[0],BorderLayout.PAGE_END);
+		tab1.add(status, BorderLayout.LINE_END);
 		
-		JFreeChart chart = ChartFactory.createTimeSeriesChart("Simulations", "Time", "Price", this.collection, false, false, false);
+		JFreeChart chart = ChartFactory.createTimeSeriesChart(
+				"Simulations", "Time", "Price", collection, false, false, false);
 		ChartPanel chartPanel = new ChartPanel(chart);
 		XYPlot plot = chart.getXYPlot();
         ValueAxis axis = plot.getDomainAxis();
@@ -87,11 +95,28 @@ public class GUI extends ApplicationFrame implements ActionListener {
 		JPanel tab3 = new JPanel();
 		tab3.add(labels[1], BorderLayout.LINE_START);
 		tab3.add(forms[1], BorderLayout.CENTER);
-		tab3.add(this.predictedChance, BorderLayout.LINE_END);
-		tab3.add(buttons[1],BorderLayout.PAGE_END);
-		this.tabbedContent.addTab("Configuration", tab1);
-		this.tabbedContent.addTab("Simulations", tab2);
-		this.tabbedContent.addTab("Targeted Chances", tab3);
+		tab3.add(predictedChance, BorderLayout.PAGE_END);
+		tab3.add(buttons[1],BorderLayout.LINE_END);
+		tabbedContent.addTab("Configuration", tab1);
+		tabbedContent.addTab("Simulations", tab2);
+		tabbedContent.addTab("Targeted Chances", tab3);
+		
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		addWindowListener(new WindowAdapter(){
+			public void windowClosing(WindowEvent e){
+				int response = JOptionPane.showConfirmDialog(null, 
+						"Simulations will only be persisted if exported.\nDo you really want to leave?", 
+						"Confim Exit",
+				        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				if (response == JOptionPane.YES_OPTION){
+					File matricesCSV = new File("matrices.csv");
+					matricesCSV.delete();
+					File database = new File("sims.db");
+					database.delete();
+					System.exit(0);
+				}
+			}
+		});
 	}
 	
 	@Override
@@ -104,6 +129,7 @@ public class GUI extends ApplicationFrame implements ActionListener {
 						ArrayList<String[]> records = ParseData.obtainRecords(companyText);
 						ParseData.createParameters(companyText, records);
 						JOptionPane.showMessageDialog(null,	"Data loaded.");
+						status.setText("Status: Information loaded.");
 					}
 					catch (Exception e){
 						e.printStackTrace();
@@ -131,8 +157,12 @@ public class GUI extends ApplicationFrame implements ActionListener {
 						double currentPrice = userMC.getCurentPrice();
 						userMC.eraseSimulations();
 						userMC.doSimulations(numberSims, numberDays, currentPrice);
-						userMC.extractSimulations(this.collection);
+						userMC.extractSimulations(currentPrice, collection);
+						status.setText("Status: Simulations plotted.");
 						JOptionPane.showMessageDialog(null,	"Simulations plotted. Check the second tab.");
+					}
+					catch (NullPointerException e){
+						JOptionPane.showMessageDialog(null,	"Load Data before Simulating.");
 					}
 					catch (Exception e){
 						e.printStackTrace();
@@ -154,6 +184,7 @@ public class GUI extends ApplicationFrame implements ActionListener {
 					try{
 						MarkovChain userMC = new MarkovChain(companyText);
 						userMC.exportSimulations();
+						status.setText("Status: Simulations exported.");
 						JOptionPane.showMessageDialog(null,	"Results exported to 'results' folder.");
 					}
 					catch (Exception e){
@@ -180,7 +211,7 @@ public class GUI extends ApplicationFrame implements ActionListener {
 						int initial = startList.getSelectedIndex(); 
 						int ending = endList.getSelectedIndex();
 						double chance = userMC.predictXDays(initial, ending, numberDaysLater);
-						this.predictedChance.setText("Probability: " + chance);
+						predictedChance.setText("Probability: " + chance);
 					}
 					catch (Exception e){
 						System.out.println(e.getStackTrace());

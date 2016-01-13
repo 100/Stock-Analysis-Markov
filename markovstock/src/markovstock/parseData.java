@@ -59,7 +59,7 @@ public class ParseData {
 				transitionMatrix[i][k] = (double)(transitionCounts[i][k]) / sum;
 			}
 		}
-		CSVWriter writer = new CSVWriter(new FileWriter("matrices.csv"), '\t');
+		CSVWriter writer = new CSVWriter(new FileWriter("matrices.csv", true), '\t', CSVWriter.NO_QUOTE_CHARACTER, System.getProperty("line.separator"));
 		String[] concatTrans = new String[transitionMatrix.length*transitionMatrix.length + 2];
 		concatTrans[0] = sym;
 		concatTrans[1] = Double.toString(averageChange);
