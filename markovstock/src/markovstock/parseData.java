@@ -13,9 +13,9 @@ import java.util.List;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
-public class parseData {
+public class ParseData {
 	
-	public static List<String[]> obtainRecords(String symbol) throws MalformedURLException, IOException{
+	public static ArrayList<String[]> obtainRecords(String symbol) throws MalformedURLException, IOException{
 		String url = "http://ichart.finance.yahoo.com/table.csv?s=" + symbol;
 		InputStream csv = new URL(url).openStream();
 		Reader reader = new InputStreamReader(csv, "UTF-8");
@@ -64,7 +64,7 @@ public class parseData {
 		concatTrans[0] = sym;
 		concatTrans[1] = Double.toString(averageChange);
 		for (int i = 0; i < transitionMatrix.length; i++){
-			for (int j = 0; j < transitionMatrix.length; i++){
+			for (int j = 0; j < transitionMatrix.length; j++){
 				concatTrans[transitionMatrix.length*i + j + 2] = Double.toString(transitionMatrix[i][j]);
 			}
 		}

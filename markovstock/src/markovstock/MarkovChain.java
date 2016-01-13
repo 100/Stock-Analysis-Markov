@@ -4,9 +4,14 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
 
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.jfree.data.time.Day;
+import org.jfree.data.time.RegularTimePeriod;
+import org.jfree.data.time.TimeSeries;
+import org.jfree.data.time.TimeSeriesCollection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -26,7 +31,7 @@ public class MarkovChain {
 		this.symbol = sym.toUpperCase();
 	}
 	
-	public MarkovChain(String sym, String filePath) throws IOException{
+	public MarkovChain(String sym) throws IOException{
 		CSVReader reader = new CSVReader(new FileReader("matrices.csv"), '\t');
 		String[] line;
 		while ((line = reader.readNext()) != null){
@@ -34,7 +39,7 @@ public class MarkovChain {
 				break;
 			}
 		}
-		this.symbol = sym;
+		this.symbol = sym.toUpperCase();
 		this.averageChange = Double.valueOf(line[1]);
 		this.transitions = new double[5][5];
 		for (int i = 2; i < line.length; i++){
@@ -45,8 +50,8 @@ public class MarkovChain {
 	
 	public double getCurentPrice() throws IOException{
 		Document page = Jsoup.connect("http://finance.yahoo.com/q?s=" + symbol).get();
-		Element newsHeadlines = page.getElementById("yfs_l84_" + symbol);
-		double price = Double.valueOf(newsHeadlines.text());
+		Element priceEle = page.getElementById("yfs_l84_" + symbol.toLowerCase());
+		double price = Double.valueOf(priceEle.text());
 		return price;
 	}
 	
@@ -76,8 +81,32 @@ public class MarkovChain {
 			 }
 			 insertion.executeUpdate();
 		 }
-		 con.commit();
 		 con.close();
+	}
+	
+	public void extractSimulations(TimeSeriesCollection collection) throws ClassNotFoundException, SQLException{
+		Class.forName("org.sqlite.JDBC");
+		Connection con = DriverManager.getConnection("jdbc:sqlite:sims.db");
+		Statement stmt = con.createStatement();
+		ResultSet results = stmt.executeQuery("SELECT * FROM SIMULATION" + symbol + ";");
+		addSimulationsToSeries(results, collection);
+		con.close();
+	}
+	
+	public void addSimulationsToSeries(ResultSet sims, TimeSeriesCollection collection) throws SQLException{
+		int columns = sims.getMetaData().getColumnCount();
+		while (sims.next()){
+			String simName = Integer.toString(sims.getInt(1));
+			TimeSeries series = new TimeSeries("Sim" + simName);
+			RegularTimePeriod day = new Day();
+			for (int i = 2; i < columns+1; i++){
+				double price = sims.getDouble(i);
+				series.add(day, price);
+	            day = day.next();
+			}
+			collection.addSeries(series);
+			day = new Day();
+		}
 	}
 	
 	public void eraseSimulations() throws ClassNotFoundException, SQLException{
@@ -86,7 +115,8 @@ public class MarkovChain {
 		Statement statement = con.createStatement();
 		String query = "DROP TABLE IF EXISTS SIMULATION" + symbol + ";";
 		statement.executeUpdate(query);
-		con.commit();
+		query = "VACUUM;";
+		statement.executeUpdate(query);
 		con.close();
 	}
 	
