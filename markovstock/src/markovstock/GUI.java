@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,6 +29,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -52,10 +54,10 @@ public class GUI extends JFrame implements ActionListener {
 	private JButton exportSims = new JButton("Export Simulations");
 	private JLabel companyLabel = new JLabel("Ticker Symbol:");
 	private JLabel numSimsLabel = new JLabel("Number of simulations:");
-	private JLabel numDaysLabel = new JLabel("Number of days to simulate:");
+	private JLabel numDaysLabel = new JLabel("Number of days:");
 	private JLabel status = new JLabel("Status: None");
 	
-	private String[] stateChoices = {"Small increase", "Large increasse", "Small decrease", "Large decrease", "No change"};
+	private String[] stateChoices = {"Small increase", "Large increase", "Small decrease", "Large decrease", "No change"};
 	private JComboBox startList = new JComboBox(stateChoices);
 	private JComboBox endList = new JComboBox(stateChoices);
 	private JTextField numDaysLater = new JTextField(10);
@@ -76,10 +78,9 @@ public class GUI extends JFrame implements ActionListener {
 		JPanel[] forms = initializeForms();
 		JPanel[] labels = initializeLabels();
 		JPanel tab1 = new JPanel();
-		tab1.add(labels[0], BorderLayout.LINE_START);
+		tab1.add(labels[0], BorderLayout.CENTER);
 		tab1.add(forms[0], BorderLayout.CENTER);
 		tab1.add(buttons[0],BorderLayout.PAGE_END);
-		tab1.add(status, BorderLayout.LINE_END);
 		
 		JFreeChart chart = ChartFactory.createTimeSeriesChart(
 				"Simulations", "Time", "Price", collection, false, false, false);
@@ -93,10 +94,9 @@ public class GUI extends JFrame implements ActionListener {
 		tab2.add(chartPanel, BorderLayout.CENTER);
 		
 		JPanel tab3 = new JPanel();
-		tab3.add(labels[1], BorderLayout.LINE_START);
+		tab3.add(labels[1], BorderLayout.CENTER);
 		tab3.add(forms[1], BorderLayout.CENTER);
-		tab3.add(predictedChance, BorderLayout.PAGE_END);
-		tab3.add(buttons[1],BorderLayout.LINE_END);
+		tab3.add(buttons[1],BorderLayout.PAGE_END);
 		tabbedContent.addTab("Configuration", tab1);
 		tabbedContent.addTab("Simulations", tab2);
 		tabbedContent.addTab("Targeted Chances", tab3);
@@ -250,6 +250,8 @@ public class GUI extends JFrame implements ActionListener {
 	    exportSims.addActionListener(this);
 	    startChance.setActionCommand("Chance");
 	    startChance.addActionListener(this);
+	    buttonPanelP1.setBorder(new EmptyBorder(50, 0, 0, 0));
+	    buttonPanelP2.setBorder(new EmptyBorder(50, 50, 0, 0));
 	    JPanel[] buttonPanels = {buttonPanelP1, buttonPanelP2};
 	    return buttonPanels;
 	}
@@ -259,20 +261,24 @@ public class GUI extends JFrame implements ActionListener {
 		JPanel formPanelP2 = new JPanel();
 		formPanelP1.setLayout(new BoxLayout(formPanelP1, BoxLayout.Y_AXIS));
 		formPanelP2.setLayout(new BoxLayout(formPanelP2, BoxLayout.Y_AXIS));
-		formPanelP1.add(Box.createRigidArea(new Dimension(0,100)));
+		formPanelP1.add(Box.createRigidArea(new Dimension(0,50)));
 		formPanelP1.add(company);
-		formPanelP1.add(Box.createRigidArea(new Dimension(0,100)));
+		formPanelP1.add(Box.createRigidArea(new Dimension(0,50)));
 		formPanelP1.add(numSims);
-		formPanelP1.add(Box.createRigidArea(new Dimension(0,100)));
+		formPanelP1.add(Box.createRigidArea(new Dimension(0,50)));
 		formPanelP1.add(numDays);
-		formPanelP1.add(Box.createRigidArea(new Dimension(0,100)));
-		formPanelP2.add(Box.createRigidArea(new Dimension(0,100)));
+		formPanelP1.add(Box.createRigidArea(new Dimension(0,50)));
+		formPanelP2.add(Box.createRigidArea(new Dimension(0,50)));
 		formPanelP2.add(startList);
-		formPanelP2.add(Box.createRigidArea(new Dimension(0,100)));
+		formPanelP2.add(Box.createRigidArea(new Dimension(0,50)));
 		formPanelP2.add(endList);
-		formPanelP2.add(Box.createRigidArea(new Dimension(0,100)));
+		formPanelP2.add(Box.createRigidArea(new Dimension(0,50)));
 		formPanelP2.add(numDaysLater);
-		formPanelP2.add(Box.createRigidArea(new Dimension(0,100)));
+		formPanelP2.add(Box.createRigidArea(new Dimension(0,50)));
+		formPanelP1.setBorder(new EmptyBorder(50, 0, 0, 0));
+		formPanelP1.setPreferredSize(new Dimension(100, 340));
+		formPanelP2.setBorder(new EmptyBorder(50, 0, 0, 0));
+		formPanelP2.setPreferredSize(new Dimension(150, 330));
 		JPanel[] formPanels = {formPanelP1, formPanelP2};
 		return formPanels;
 	}
@@ -282,20 +288,34 @@ public class GUI extends JFrame implements ActionListener {
 		JPanel labelPanelP2 = new JPanel();
 		labelPanelP1.setLayout(new BoxLayout(labelPanelP1, BoxLayout.Y_AXIS));
 		labelPanelP2.setLayout(new BoxLayout(labelPanelP2, BoxLayout.Y_AXIS));
-		labelPanelP1.add(Box.createRigidArea(new Dimension(0,100)));
+		labelPanelP1.add(Box.createRigidArea(new Dimension(0,60)));
 		labelPanelP1.add(companyLabel);
-		labelPanelP1.add(Box.createRigidArea(new Dimension(0,100)));
+		companyLabel.setFont(new Font("Arial", Font.BOLD, 16));
+		labelPanelP1.add(Box.createRigidArea(new Dimension(0,60)));
 		labelPanelP1.add(numSimsLabel);
-		labelPanelP1.add(Box.createRigidArea(new Dimension(0,100)));
+		numSimsLabel.setFont(new Font("Arial", Font.BOLD, 16));
+		labelPanelP1.add(Box.createRigidArea(new Dimension(0,60)));
 		labelPanelP1.add(numDaysLabel);
-		labelPanelP1.add(Box.createRigidArea(new Dimension(0,100)));
-		labelPanelP2.add(Box.createRigidArea(new Dimension(0,100)));
+		numDaysLabel.setFont(new Font("Arial", Font.BOLD, 16));
+		labelPanelP1.add(Box.createRigidArea(new Dimension(0,60)));
+		labelPanelP1.add(status);
+		status.setForeground(Color.red);
+		labelPanelP2.add(Box.createRigidArea(new Dimension(0,60)));
 		labelPanelP2.add(startListLabel);
-		labelPanelP2.add(Box.createRigidArea(new Dimension(0,100)));
+		startListLabel.setFont(new Font("Arial", Font.BOLD, 16));
+		labelPanelP2.add(Box.createRigidArea(new Dimension(0,60)));
 		labelPanelP2.add(endListLabel);
-		labelPanelP2.add(Box.createRigidArea(new Dimension(0,100)));
+		endListLabel.setFont(new Font("Arial", Font.BOLD, 16));
+		labelPanelP2.add(Box.createRigidArea(new Dimension(0,60)));
 		labelPanelP2.add(numDaysLaterLabel);
-		labelPanelP2.add(Box.createRigidArea(new Dimension(0,100)));
+		numDaysLaterLabel.setFont(new Font("Arial", Font.BOLD, 16));
+		labelPanelP2.add(Box.createRigidArea(new Dimension(0,60)));
+		labelPanelP2.add(predictedChance);
+		predictedChance.setFont(new Font("Arial", Font.BOLD, 16));
+		labelPanelP1.setBorder(new EmptyBorder(75, 50, 0, 0));
+		labelPanelP1.setPreferredSize(new Dimension(250, 400));
+		labelPanelP2.setBorder(new EmptyBorder(75, 50, 0, 0));
+		labelPanelP2.setPreferredSize(new Dimension(250, 400));
 		JPanel[] labelPanels = {labelPanelP1, labelPanelP2};
 		return labelPanels;
 	}
@@ -320,7 +340,7 @@ public class GUI extends JFrame implements ActionListener {
 	}
 
 	public static void main(String[] args){
-		GUI current = new GUI("Stock Simulation and Analysis Desktop Application by Devin Soni");
+		GUI current = new GUI("Stock Simulation and Analysis Desktop Application by d-soni");
 		current.pack();
 		current.setSize(800, 600);
 		RefineryUtilities.centerFrameOnScreen(current);
