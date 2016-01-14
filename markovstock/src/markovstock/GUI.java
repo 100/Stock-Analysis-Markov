@@ -20,15 +20,19 @@ import java.sql.ResultSetMetaData;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
 import org.jfree.chart.ChartFactory;
@@ -77,10 +81,16 @@ public class GUI extends JFrame implements ActionListener {
 		JPanel[] buttons = initializeButtons();
 		JPanel[] forms = initializeForms();
 		JPanel[] labels = initializeLabels();
+		JPanel tab1sub = new JPanel();
+		tab1sub.add(labels[0]);
+		tab1sub.add(forms[0]);
+		tab1sub.add(buttons[0]);
+		JPanel tab1sup = new JPanel();
+		tab1sup.add(new JLabel(new ImageIcon("logo.png")));
 		JPanel tab1 = new JPanel();
-		tab1.add(labels[0], BorderLayout.CENTER);
-		tab1.add(forms[0], BorderLayout.CENTER);
-		tab1.add(buttons[0],BorderLayout.PAGE_END);
+		tab1.setLayout(new BoxLayout(tab1, BoxLayout.Y_AXIS));
+		tab1.add(tab1sup);
+		tab1.add(tab1sub);
 		
 		JFreeChart chart = ChartFactory.createTimeSeriesChart(
 				"Simulations", "Time", "Price", collection, false, false, false);
@@ -91,12 +101,12 @@ public class GUI extends JFrame implements ActionListener {
         axis = plot.getRangeAxis();
         axis.setAutoRange(true);; 
 		JPanel tab2 = new JPanel();
-		tab2.add(chartPanel, BorderLayout.CENTER);
+		tab2.add(chartPanel);
 		
 		JPanel tab3 = new JPanel();
-		tab3.add(labels[1], BorderLayout.CENTER);
-		tab3.add(forms[1], BorderLayout.CENTER);
-		tab3.add(buttons[1],BorderLayout.PAGE_END);
+		tab3.add(labels[1]);
+		tab3.add(forms[1]);
+		tab3.add(buttons[1]);
 		tabbedContent.addTab("Configuration", tab1);
 		tabbedContent.addTab("Simulations", tab2);
 		tabbedContent.addTab("Targeted Chances", tab3);
@@ -153,12 +163,33 @@ public class GUI extends JFrame implements ActionListener {
 					int numberSims = Integer.parseInt(numSimsText);
 					int numberDays = Integer.parseInt(numDaysText);
 					try{
-						MarkovChain userMC = new MarkovChain(companyText);
-						double currentPrice = userMC.getCurentPrice();
-						userMC.eraseSimulations();
-						userMC.doSimulations(numberSims, numberDays, currentPrice);
-						userMC.extractSimulations(currentPrice, collection);
-						status.setText("Status: Simulations plotted.");
+						JDialog loadingDialog = new JDialog(this, "Progress dialog", true);
+						loadingDialog.add(new JLabel("Loading..."), BorderLayout.PAGE_START);
+						JProgressBar progress = new JProgressBar();
+						progress.setIndeterminate(true);
+						loadingDialog.add(progress, BorderLayout.CENTER);
+						loadingDialog.setSize(300, 100);
+						loadingDialog.setLocationRelativeTo(null);
+						loadingDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+						SwingWorker simWorker = new SwingWorker<Void, Void>(){
+							@Override
+							protected Void doInBackground() throws Exception {
+								MarkovChain userMC = new MarkovChain(companyText);
+								double currentPrice = userMC.getCurentPrice();
+								userMC.eraseSimulations();
+								userMC.doSimulations(numberSims, numberDays, currentPrice);
+								userMC.extractSimulations(currentPrice, collection);
+								status.setText("Status: Simulations plotted.");
+								return null;
+							}
+							
+							@Override
+							protected void done(){
+								loadingDialog.dispose();
+							}
+						};
+						simWorker.execute();
+						loadingDialog.setVisible(true);
 						JOptionPane.showMessageDialog(null,	"Simulations plotted. Check the second tab.");
 					}
 					catch (NullPointerException e){
@@ -250,7 +281,7 @@ public class GUI extends JFrame implements ActionListener {
 	    exportSims.addActionListener(this);
 	    startChance.setActionCommand("Chance");
 	    startChance.addActionListener(this);
-	    buttonPanelP1.setBorder(new EmptyBorder(50, 0, 0, 0));
+	    buttonPanelP1.setBorder(new EmptyBorder(0, 50, 400, 0));
 	    buttonPanelP2.setBorder(new EmptyBorder(50, 50, 0, 0));
 	    JPanel[] buttonPanels = {buttonPanelP1, buttonPanelP2};
 	    return buttonPanels;
@@ -261,7 +292,7 @@ public class GUI extends JFrame implements ActionListener {
 		JPanel formPanelP2 = new JPanel();
 		formPanelP1.setLayout(new BoxLayout(formPanelP1, BoxLayout.Y_AXIS));
 		formPanelP2.setLayout(new BoxLayout(formPanelP2, BoxLayout.Y_AXIS));
-		formPanelP1.add(Box.createRigidArea(new Dimension(0,50)));
+		formPanelP1.add(Box.createRigidArea(new Dimension(0,10)));
 		formPanelP1.add(company);
 		formPanelP1.add(Box.createRigidArea(new Dimension(0,50)));
 		formPanelP1.add(numSims);
@@ -275,10 +306,10 @@ public class GUI extends JFrame implements ActionListener {
 		formPanelP2.add(Box.createRigidArea(new Dimension(0,50)));
 		formPanelP2.add(numDaysLater);
 		formPanelP2.add(Box.createRigidArea(new Dimension(0,50)));
-		formPanelP1.setBorder(new EmptyBorder(50, 0, 0, 0));
+		formPanelP1.setBorder(new EmptyBorder(0, 0, 100, 0));
 		formPanelP1.setPreferredSize(new Dimension(100, 340));
-		formPanelP2.setBorder(new EmptyBorder(50, 0, 0, 0));
-		formPanelP2.setPreferredSize(new Dimension(150, 330));
+		formPanelP2.setBorder(new EmptyBorder(10, 0, 10, 0));
+		formPanelP2.setPreferredSize(new Dimension(150, 300));
 		JPanel[] formPanels = {formPanelP1, formPanelP2};
 		return formPanels;
 	}
@@ -288,7 +319,7 @@ public class GUI extends JFrame implements ActionListener {
 		JPanel labelPanelP2 = new JPanel();
 		labelPanelP1.setLayout(new BoxLayout(labelPanelP1, BoxLayout.Y_AXIS));
 		labelPanelP2.setLayout(new BoxLayout(labelPanelP2, BoxLayout.Y_AXIS));
-		labelPanelP1.add(Box.createRigidArea(new Dimension(0,60)));
+		labelPanelP1.add(Box.createRigidArea(new Dimension(0,15)));
 		labelPanelP1.add(companyLabel);
 		companyLabel.setFont(new Font("Arial", Font.BOLD, 16));
 		labelPanelP1.add(Box.createRigidArea(new Dimension(0,60)));
@@ -312,9 +343,9 @@ public class GUI extends JFrame implements ActionListener {
 		labelPanelP2.add(Box.createRigidArea(new Dimension(0,60)));
 		labelPanelP2.add(predictedChance);
 		predictedChance.setFont(new Font("Arial", Font.BOLD, 16));
-		labelPanelP1.setBorder(new EmptyBorder(75, 50, 0, 0));
-		labelPanelP1.setPreferredSize(new Dimension(250, 400));
-		labelPanelP2.setBorder(new EmptyBorder(75, 50, 0, 0));
+		labelPanelP1.setBorder(new EmptyBorder(0, 50, 0, 0));
+		labelPanelP1.setPreferredSize(new Dimension(250, 350));
+		labelPanelP2.setBorder(new EmptyBorder(50, 50, 0, 0));
 		labelPanelP2.setPreferredSize(new Dimension(250, 400));
 		JPanel[] labelPanels = {labelPanelP1, labelPanelP2};
 		return labelPanels;
@@ -341,7 +372,7 @@ public class GUI extends JFrame implements ActionListener {
 
 	public static void main(String[] args){
 		GUI current = new GUI("Stock Simulation and Analysis Desktop Application by d-soni");
-		current.pack();
+		current.setResizable(false);
 		current.setSize(800, 600);
 		RefineryUtilities.centerFrameOnScreen(current);
         current.setVisible(true);
