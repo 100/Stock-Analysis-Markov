@@ -125,6 +125,10 @@ public class MarkovChain {
 	}
 	
 	public void exportSimulations() throws IOException, ClassNotFoundException, SQLException{
+		File resultsDir = new File("./results");
+		if (!resultsDir.exists()){
+			resultsDir.mkdir();
+		}
 		String filePath;
 		if (new File("./results/table" + symbol + ".csv").exists()){
 			File directory = new File("./results/");

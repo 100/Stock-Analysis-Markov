@@ -33,6 +33,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 
 import org.jfree.chart.ChartFactory;
@@ -371,6 +372,12 @@ public class GUI extends JFrame implements ActionListener {
 	}
 
 	public static void main(String[] args){
+		try{
+			UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
+		}
+		catch (Exception e) { 
+			//do nothing - will use default if cannot set
+		}
 		GUI current = new GUI("Stock Simulation and Analysis Desktop Application by d-soni");
 		current.setResizable(false);
 		current.setSize(800, 600);
