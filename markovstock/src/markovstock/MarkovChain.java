@@ -14,22 +14,33 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
-
 
 public class MarkovChain {
 	private double[][] transitions;
 	private double averageChange;
 	private String symbol;
 	
+	/**
+	 * Constructor with all values given.
+	 * 
+	 * @param sym
+	 * @param averageStockChange
+	 * @param transitionMatrix
+	 */
 	public MarkovChain(String sym, double averageStockChange, double[][] transitionMatrix){
 		this.transitions = transitionMatrix;
 		this.averageChange = averageStockChange;
 		this.symbol = sym.toUpperCase();
 	}
 	
+	/**
+	 * Constructor in which values are read from CSV.
+	 * 
+	 * @param sym
+	 * @throws IOException
+	 */
 	public MarkovChain(String sym) throws IOException{
 		CSVReader reader = new CSVReader(new FileReader("matrices.csv"), '\t');
 		String[] line;
@@ -47,6 +58,12 @@ public class MarkovChain {
 		reader.close();
 	}
 	
+	/**
+	 * Scrape Yahoo Finance to find current (real-time) stock price.
+	 * 
+	 * @return double representing stock price
+	 * @throws IOException
+	 */
 	public double getCurentPrice() throws IOException{
 		Document page = Jsoup.connect("http://finance.yahoo.com/q?s=" + symbol).get();
 		Element priceEle = page.getElementById("yfs_l84_" + symbol.toLowerCase());
@@ -54,6 +71,17 @@ public class MarkovChain {
 		return price;
 	}
 	
+	/**
+	 * Conduct a variable number of simulations spanning a variable number of days
+	 * based on the assumption that the initial price is the current price. 
+	 * Saves results to SQLite database.
+	 * 
+	 * @param numSims
+	 * @param numDays
+	 * @param startingPrice
+	 * @throws ClassNotFoundException
+	 * @throws SQLException
+	 */
 	public void doSimulations(int numSims, int numDays, double startingPrice) throws ClassNotFoundException, SQLException{
 		 Class.forName("org.sqlite.JDBC");
 		 Connection con = DriverManager.getConnection("jdbc:sqlite:sims.db");
@@ -83,6 +111,14 @@ public class MarkovChain {
 		 con.close();
 	}
 	
+	/**
+	 * Selects simulation records from database and adds to JFreeChart chart.
+	 * 
+	 * @param currentPrice
+	 * @param collection
+	 * @throws ClassNotFoundException
+	 * @throws SQLException
+	 */
 	public void extractSimulations(double currentPrice, TimeSeriesCollection collection) throws ClassNotFoundException, SQLException{
 		Class.forName("org.sqlite.JDBC");
 		Connection con = DriverManager.getConnection("jdbc:sqlite:sims.db");
@@ -93,6 +129,15 @@ public class MarkovChain {
 		con.close();
 	}
 	
+	/**
+	 * Given a query's ResultSet, converts to JFreeChart's needed format and adds
+	 * to given TimeSeriesCollection object.
+	 * 
+	 * @param currentPrice
+	 * @param sims
+	 * @param collection
+	 * @throws SQLException
+	 */
 	public void addSimulationsToSeries(double currentPrice, ResultSet sims, TimeSeriesCollection collection) throws SQLException{
 		int columns = sims.getMetaData().getColumnCount();
 		while (sims.next()){
@@ -111,6 +156,12 @@ public class MarkovChain {
 		}
 	}
 	
+	/**
+	 * Clears simulation database and frees space in database.
+	 * 
+	 * @throws ClassNotFoundException
+	 * @throws SQLException
+	 */
 	public void eraseSimulations() throws ClassNotFoundException, SQLException{
 		Class.forName("org.sqlite.JDBC");
 		Connection con = DriverManager.getConnection("jdbc:sqlite:sims.db");
@@ -122,6 +173,13 @@ public class MarkovChain {
 		con.close();
 	}
 	
+	/**
+	 * Exports simulations from database into a CSV.
+	 * 
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws SQLException
+	 */
 	public void exportSimulations() throws IOException, ClassNotFoundException, SQLException{
 		File resultsDir = new File("./results");
 		if (!resultsDir.exists()){
@@ -152,6 +210,15 @@ public class MarkovChain {
 		con.close();
 	}
 	
+	/**
+	 * Calculates chance of starting at $initialState and ending at $finalState
+	 * in $daysLater days.
+	 * 
+	 * @param initialState
+	 * @param finalState
+	 * @param daysLater
+	 * @return double representing chance of ending at $finalState
+	 */
 	public double predictXDays(int initialState, int finalState, int daysLater){
 		RealMatrix transitionMatrix = MatrixUtils.createRealMatrix(transitions);
 		RealMatrix result = MatrixUtils.createRealMatrix(transitions);
@@ -162,6 +229,14 @@ public class MarkovChain {
 		return chance;
 	}
 	
+	/**
+	 * Conducts a random walk starting at $initialState and ending at $finalState
+	 * and returns array representation of walk.
+	 * 
+	 * @param days
+	 * @param startingPrice
+	 * @return double[] representing $days of random walking
+	 */
 	public double[] predict(int days, double startingPrice){
 		double[] predictions = new double[days];
 		int begin = (int)(Math.random() * 5);
@@ -175,7 +250,13 @@ public class MarkovChain {
 		return predictions;
 	}
 	
-	//0: small up, 1:large up, 2:small down, 3:large down, 4:no difference
+	/**
+	 * Makes a given step and returns resulting new price.
+	 * 
+	 * @param currPrice
+	 * @param transition
+	 * @return double representing result of step
+	 */
 	public double makeStep(double currPrice, int transition){
 		double multiplier = 0;
 		if (transition == 0){
@@ -193,6 +274,12 @@ public class MarkovChain {
 		return currPrice * (1 + multiplier/100);
 	}
 	
+	/**
+	 * Chooses a state based on row's probability distribution.
+	 * 
+	 * @param currState
+	 * @return int representing chosen state
+	 */
 	public int makeSelection(int currState){
 		double[] values = transitions[currState];
 		double[] rouletteWheel = new double[5];

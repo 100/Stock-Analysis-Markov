@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -26,7 +27,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
-
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -228,10 +228,13 @@ public class GUI extends JFrame implements ActionListener {
 						int initial = startList.getSelectedIndex(); 
 						int ending = endList.getSelectedIndex();
 						double chance = userMC.predictXDays(initial, ending, numberDaysLater);
-						predictedChance.setText("Probability: " + chance);
+						predictedChance.setText("Probability: " + String.format("%.6f", chance));
+					}
+					catch (FileNotFoundException | NullPointerException e){
+						JOptionPane.showMessageDialog(null,	"Please load data first.");
 					}
 					catch (Exception e){
-						System.out.println(e.getStackTrace());
+						e.printStackTrace();
 						JOptionPane.showMessageDialog(null,	"An error has occurred.");
 					}
 				}
@@ -358,7 +361,7 @@ public class GUI extends JFrame implements ActionListener {
 
 	public static void main(String[] args){
 		try{
-			UIManager.setLookAndFeel("com.seaglasslookandfeel.SeaGlassLookAndFeel");
+			UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 		}
 		catch (Exception e) { 
 			//do nothing - will use default if cannot set

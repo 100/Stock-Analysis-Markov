@@ -9,12 +9,19 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
 public class ParseData {
 	
+	/**
+	 * Fetch CSV from Yahoo Finance and return iterable list of rows.
+	 * 
+	 * @param symbol
+	 * @return ArrayList of String[] representing CSV rows
+	 * @throws MalformedURLException
+	 * @throws IOException
+	 */
 	public static ArrayList<String[]> obtainRecords(String symbol) throws MalformedURLException, IOException{
 		String url = "http://ichart.finance.yahoo.com/table.csv?s=" + symbol;
 		InputStream csv = new URL(url).openStream();
@@ -25,6 +32,14 @@ public class ParseData {
 		return new ArrayList<String[]>(records.subList(1, records.size()));
 	}
 	
+	/**
+	 * Calculate parameters of MarkovChain, and save to CSV file for later use.
+	 * 
+	 * @param sym
+	 * @param records
+	 * @return MarkovChain object created with derived parameters
+	 * @throws IOException
+	 */
 	public static MarkovChain createParameters(String sym, ArrayList<String[]> records) throws IOException{
 		ArrayList<Double> closingPrices = new ArrayList<Double>();
 		for (String[] day: records){
@@ -73,7 +88,14 @@ public class ParseData {
 		return new MarkovChain(sym, averageChange, transitionMatrix);
 	}
 	
-	//0: small up, 1:large up, 2:small down, 3:large down, 4:no difference
+	/**
+	 * Classify a percent-change as its corresponding state in the transition matrix.
+	 * 
+	 * @param diff
+	 * @param avgDiff
+	 * @return int representing state classification:
+	 * 0: small up, 1:large up, 2:small down, 3:large down, 4:no difference
+	 */
 	public static int classifyDifference(double diff, double avgDiff){
 		if (diff == 0){
 			return 4;
