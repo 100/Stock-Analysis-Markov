@@ -1,6 +1,6 @@
-#Predicting and Analyzing Trends in Stock Movements using Markov Chains and Monte Carlo Simulation of Random Walks
+#Analyzing Trends in Stock Movements using Markov Chains and Monte Carlo Simulation of Random Walks
 
-##SEE DEMONSTRATIONS [to come]()!
+##SEE DEMONSTRATIONS [HERE](http://d-soni.github.io/Markov-Stock-Analysis)!
 
 ###Download the executable .jar file [here](https://github.com/d-soni/Markov-Stock-Analysis/raw/master/markovstock.jar).
 

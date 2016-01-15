@@ -71,7 +71,12 @@ public class ParseData {
 				sum += transitionCounts[i][j];
 			}
 			for (int k = 0; k < transitionCounts[i].length; k++){
-				transitionMatrix[i][k] = (double)(transitionCounts[i][k]) / sum;
+				if (sum != 0){
+					transitionMatrix[i][k] = (double)(transitionCounts[i][k]) / sum;
+				}
+				else{
+					transitionMatrix[i][k] = 0;
+				}
 			}
 		}
 		CSVWriter writer = new CSVWriter(new FileWriter("matrices.csv", true), '\t', CSVWriter.NO_QUOTE_CHARACTER, System.getProperty("line.separator"));
