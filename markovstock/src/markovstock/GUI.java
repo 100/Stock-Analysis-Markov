@@ -72,7 +72,8 @@ public class GUI extends JFrame implements ActionListener {
 		tab1sub.add(forms[0]);
 		tab1sub.add(buttons[0]);
 		JPanel tab1sup = new JPanel();
-		tab1sup.add(new JLabel(new ImageIcon("./img/logo.png")));
+		java.net.URL imageURL = GUI.class.getResource("img/logo.png");
+		tab1sup.add(new JLabel(new ImageIcon(imageURL)));
 		JPanel tab1 = new JPanel();
 		tab1.setLayout(new BoxLayout(tab1, BoxLayout.Y_AXIS));
 		tab1.add(tab1sup);
