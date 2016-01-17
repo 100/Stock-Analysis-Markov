@@ -20,6 +20,7 @@
 * Interaction with SQLite3 Embedded Relational Database
 * Reading and Writing to CSV
 * Web-Scraping
+* Use of Yahoo Finance API
 * Time-Series Visualization
 * Desktop Application Development
 	* GUI Creation with Swing
